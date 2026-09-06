@@ -5,11 +5,13 @@
 (기존 개발자센터 키는 이 코드와 호환되지 않습니다.)
 """
 
+import json       # 샘플 데이터 로드용
 import requests  # HTTP 요청 라이브러리
 import time      # 호출 간격 조절용
-from config import NAVER_HUB_KEY_ID, NAVER_HUB_KEY  # HUB 인증 정보 불러오기
+from config import NAVER_HUB_KEY_ID, NAVER_HUB_KEY, USE_MOCK_DATA  # HUB 인증 정보 및 목데이터 플래그
 
 HUB_URL = "https://naverapihub.apigw.ntruss.com/search/v1/local"  # HUB 지역검색 엔드포인트
+SAMPLE_PATH = "data/sample/naver_local_sample.json"  # 목 데이터 경로
 
 
 def search_local(query: str, display: int = 5) -> list[dict]:
@@ -51,6 +53,11 @@ def collect_all(area_names: list[str], keyword_suffixes: list[str]) -> list[dict
     지역명 x 숙소유형 키워드 조합으로 여러 번 검색해 결과를 합칩니다.
     예: '가평' x ['독채 펜션', '단체 펜션'] -> '가평 독채 펜션', '가평 단체 펜션'
     """
+    if USE_MOCK_DATA:  # API 키가 없으면 샘플 데이터로 대체
+        print("[Naver] API 키 미설정 -> 샘플 데이터 사용")
+        with open(SAMPLE_PATH, encoding="utf-8") as f:
+            return json.load(f)
+
     all_results = []  # 전체 결과를 모을 리스트
     for area in area_names:
         for suffix in keyword_suffixes:

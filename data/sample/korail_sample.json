@@ -1,0 +1,12 @@
+{
+  "가평": [
+    {"trainNo": "4321", "trainKndNm": "ITX-청춘", "upplnDnSeNm": "상행", "dptrDt": "20261010060500", "stnCd": "K123"},
+    {"trainNo": "4323", "trainKndNm": "ITX-청춘", "upplnDnSeNm": "상행", "dptrDt": "20261010083000", "stnCd": "K123"},
+    {"trainNo": "4329", "trainKndNm": "ITX-청춘", "upplnDnSeNm": "상행", "dptrDt": "20261010213000", "stnCd": "K123"}
+  ],
+  "청량리": [
+    {"trainNo": "4321", "trainKndNm": "ITX-청춘", "upplnDnSeNm": "하행", "dptrDt": "20261010053000", "stnCd": "K001"},
+    {"trainNo": "4323", "trainKndNm": "ITX-청춘", "upplnDnSeNm": "하행", "dptrDt": "20261010080000", "stnCd": "K001"},
+    {"trainNo": "4329", "trainKndNm": "ITX-청춘", "upplnDnSeNm": "하행", "dptrDt": "20261010203000", "stnCd": "K001"}
+  ]
+}

@@ -1,0 +1,6 @@
+[
+  {"source": "tourapi", "name": "가평 숲속 독채펜션", "address": "경기 가평군 가평읍 OO로 12", "lat": 37.8305, "lng": 127.5110, "image": null, "tel": "031-000-0000", "roomcount": "5", "chkcooking": "가능", "barbecue": "가능"},
+  {"source": "tourapi", "name": "청평 호수뷰 펜션", "address": "경기 가평군 청평면 OO길 34", "lat": 37.7430, "lng": 127.4450, "image": null, "tel": "031-000-0001", "roomcount": "4", "chkcooking": "가능", "barbecue": "불가능"},
+  {"source": "tourapi", "name": "강촌 감성 펜션", "address": "강원 춘천시 남산면 OO로 5", "lat": 37.7970, "lng": 127.5820, "image": null, "tel": "033-000-0002", "roomcount": "6", "chkcooking": "가능", "barbecue": "가능"},
+  {"source": "tourapi", "name": "양평 힐링 풀빌라", "address": "경기 양평군 양평읍 OO길 7", "lat": 37.4920, "lng": 127.4890, "image": null, "tel": "031-000-0003", "roomcount": "3", "chkcooking": "불가능", "barbecue": "가능"}
+]

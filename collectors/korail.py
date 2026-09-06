@@ -1,64 +1,72 @@
 """
 한국철도공사_열차운행정보 API 수집 모듈 (공공데이터포털)
-'여객열차 운행계획' 서비스를 사용해 특정 역의 정차 열차 목록을 가져옵니다.
-2024년 개편으로 엔드포인트가 v2로 바뀌었습니다.
+- '여객열차 운행계획'으로 특정 역의 정차 열차 목록을 가져옵니다.
+- 서울방향 소요시간 계산을 위해 서울측 기준역(청량리/상봉)의 같은 열차 정차시각도 함께 조회합니다.
+- 키가 없을 때는 샘플 데이터로 대체(USE_MOCK_DATA)
+
+주의: 아래 엔드포인트 경로(getCommCode, trainStopInfo)와 파라미터/필드명은
+      활용신청 승인 후 마이페이지에서 제공되는 공식 문서로 반드시 재확인하세요.
+      승인 전에는 공개 문서만으로 정확한 스펙을 확인할 방법이 없습니다.
 """
 
-import requests  # HTTP 요청 라이브러리
-from config import KORAIL_API_KEY  # 설정 파일에서 API 키 불러오기
+import json       # 샘플 데이터 로드/파싱용
+import requests   # HTTP 요청
+
+from config import KORAIL_API_KEY, USE_MOCK_DATA, SEOUL_SIDE_STATIONS  # 설정값
 
 BASE_URL = "https://apis.data.go.kr/B551457/run/v2"  # 열차운행정보 v2 엔드포인트
+SAMPLE_PATH = "data/sample/korail_sample.json"  # 목 데이터 경로
 
-# 경춘선·중앙선 주요 역의 역코드는 코드정보 API로 미리 확인해서 채워두는 것을 추천합니다.
-# 아래는 자리표시자이므로, 실제 코드정보 API 응답으로 반드시 교체하세요.
+# 역코드는 코드정보 API(getCommCode)로 확인 후 채워야 합니다. 지금은 자리표시자입니다.
 STATION_CODE_MAP = {
     "가평": "PLACEHOLDER_STN_CD",
     "청평": "PLACEHOLDER_STN_CD",
     "강촌": "PLACEHOLDER_STN_CD",
+    "대성리": "PLACEHOLDER_STN_CD",
+    "상천": "PLACEHOLDER_STN_CD",
+    "굴봉산": "PLACEHOLDER_STN_CD",
+    "백양리": "PLACEHOLDER_STN_CD",
     "양평": "PLACEHOLDER_STN_CD",
     "용문": "PLACEHOLDER_STN_CD",
+    "청량리": "PLACEHOLDER_STN_CD",  # 서울측 기준역 1
+    "상봉": "PLACEHOLDER_STN_CD",    # 서울측 기준역 2
 }
 
 
-def fetch_station_codes(mrnt_cd: str = None) -> list[dict]:
+def fetch_station_codes() -> list[dict]:
     """
-    코드정보 API를 호출해 역코드(stn_cd) 목록을 가져옵니다.
-    처음 한 번 실행해서 STATION_CODE_MAP을 채우는 용도로 사용하세요.
+    코드정보 API로 역코드(stn_cd) 목록을 가져옵니다. STATION_CODE_MAP을 채우는 용도입니다.
     """
-    url = f"{BASE_URL}/getCommCode"  # 코드정보 조회 엔드포인트 (실제 경로는 발급받은 가이드 문서 기준으로 확인 필요)
-    params = {
-        "serviceKey": KORAIL_API_KEY,  # 인증키
-        "_type": "json",               # JSON 응답
-        "type": "stn_cd",              # 역코드 타입 조회
-    }
-    response = requests.get(url, params=params, timeout=10)  # API 호출
-    response.raise_for_status()  # 오류 시 예외 발생
-    data = response.json()  # JSON 파싱
-    return data.get("response", {}).get("body", {}).get("items", [])  # 코드 목록 반환
+    url = f"{BASE_URL}/getCommCode"
+    params = {"serviceKey": KORAIL_API_KEY, "_type": "json", "type": "stn_cd"}
+    response = requests.get(url, params=params, timeout=10)
+    response.raise_for_status()
+    data = response.json()
+    return data.get("response", {}).get("body", {}).get("items", [])
 
 
 def fetch_stop_trains(station_code: str, run_date: str) -> list[dict]:
     """
     특정 역(station_code)에 특정 날짜(run_date, YYYYMMDD)에 정차하는 열차 목록을 가져옵니다.
     """
-    url = f"{BASE_URL}/trainStopInfo"  # 여객열차 운행정보(역별 정차) 엔드포인트 (실제 경로는 가이드 문서로 확인)
+    url = f"{BASE_URL}/trainStopInfo"
     params = {
-        "serviceKey": KORAIL_API_KEY,  # 인증키
-        "_type": "json",               # JSON 응답
-        "stnCd": station_code,          # 조회할 역코드
-        "runDate": run_date,            # 조회할 운행일자
-        "numOfRows": 200,               # 하루 정차 열차가 많을 수 있어 넉넉히 설정
+        "serviceKey": KORAIL_API_KEY,
+        "_type": "json",
+        "stnCd": station_code,
+        "runDate": run_date,
+        "numOfRows": 200,
     }
-    response = requests.get(url, params=params, timeout=10)  # API 호출
-    response.raise_for_status()  # 오류 시 예외 발생
-    data = response.json()  # JSON 파싱
+    response = requests.get(url, params=params, timeout=10)
+    response.raise_for_status()
+    data = response.json()
 
-    items = data.get("response", {}).get("body", {}).get("items", "")  # 결과 목록
+    items = data.get("response", {}).get("body", {}).get("items", "")
     if not items:
-        return []  # 결과 없으면 빈 리스트
+        return []
 
-    item_list = items.get("item", [])  # 실제 열차 목록
-    if isinstance(item_list, dict):     # 1건이면 dict로 오므로 리스트로 통일
+    item_list = items.get("item", [])
+    if isinstance(item_list, dict):
         item_list = [item_list]
 
     return item_list
@@ -66,17 +74,23 @@ def fetch_stop_trains(station_code: str, run_date: str) -> list[dict]:
 
 def collect_all(station_name_to_code: dict, run_date: str) -> dict:
     """
-    여러 역에 대해 정차 열차 목록을 한 번에 수집합니다.
+    지역역 + 서울측 기준역까지 포함해 역별 정차 열차 목록을 한 번에 수집합니다.
     반환값은 {역이름: [열차목록]} 형태입니다.
+    USE_MOCK_DATA가 True면 샘플 데이터를 반환합니다 (샘플에는 '가평'과 '청량리'만 들어있습니다).
     """
-    result = {}  # 역별 결과를 담을 딕셔너리
+    if USE_MOCK_DATA:
+        print("[KORAIL] API 키 미설정 -> 샘플 데이터 사용")
+        with open(SAMPLE_PATH, encoding="utf-8") as f:
+            return json.load(f)
+
+    result = {}
     for name, code in station_name_to_code.items():
         try:
-            trains = fetch_stop_trains(code, run_date)  # 역별 정차 열차 조회
-            result[name] = trains                        # 결과 저장
-            print(f"[KORAIL] '{name}' 정차 열차 {len(trains)}건")  # 진행상황 출력
+            trains = fetch_stop_trains(code, run_date)
+            result[name] = trains
+            print(f"[KORAIL] '{name}' 정차 열차 {len(trains)}건")
         except requests.RequestException as e:
-            print(f"[KORAIL] '{name}' 조회 실패: {e}")  # 실패해도 계속 진행
-            result[name] = []  # 실패 시 빈 리스트로 채워 파이프라인이 끊기지 않게 함
+            print(f"[KORAIL] '{name}' 조회 실패: {e}")
+            result[name] = []
 
     return result
